@@ -103,6 +103,30 @@ makeProgram(GLuint vertShader, GLuint fragShader)
     return program;
 }
 
+GLuint
+makeVao(GLint position)
+{
+    float verts[] = {
+        0.0f, 0.6f,
+        0.4f, -0.4f,
+        -0.4f, -0.4f
+    };
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(position);
+    glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+    return vao;
+}
+
 } // namespace
 
 int
@@ -136,14 +160,23 @@ main(int argc, char* argv[])
         glfwTerminate();
         std::exit(EXIT_FAILURE);
     }
-    
+
     Program program = makeProgram(makeShader(GL_VERTEX_SHADER, "simple.vert"),
                                   makeShader(GL_FRAGMENT_SHADER, "simple.frag"));
+    GLuint vao = makeVao(program.position);
 
     while (!glfwWindowShouldClose(window)) {
+        int width = 0;
+        int height = 0;
+        glfwGetFramebufferSize(window, &width, &height);
+        glViewport(0, 0, width, height);
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(program.id);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
