@@ -1,6 +1,6 @@
 #include "Shader.h"
 
-#include "InvalidShaderError.h"
+#include "thermite/errors/UnknownShaderError.h"
 #include "thmgl.h"
 #include "utils.h"
 
@@ -14,10 +14,11 @@ Shader::Shader(std::string filePath) :
     GLenum mType(0),
     mFilePath(std::move(filePath))
 {
+    const std::size_t filePathSize = mFilePath.size();
+
     // Determine the shader type based on the file extension.
-    if (mFilePath.size() < 3) {
-        throw InvalidShaderError(makeStr("File '", mFilePath,
-                "' is not a valid shader type"));
+    if (filePathSize < 3) {
+        throw UnknownShaderError(mFilePath);
     }
 
     // TODO
