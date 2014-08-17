@@ -1,3 +1,5 @@
+#include "src/utils.h"
+
 #include "react/Domain.h"
 #include "react/Event.h"
 
@@ -187,8 +189,8 @@ main(int argc, char* argv[])
         std::exit(EXIT_FAILURE);
     }
 
-    Program program = makeProgram(makeShader(GL_VERTEX_SHADER, "simple.vert"),
-                                  makeShader(GL_FRAGMENT_SHADER, "simple.frag"));
+    Program program = makeProgram(makeShader(GL_VERTEX_SHADER, "simple.vs"),
+                                  makeShader(GL_FRAGMENT_SHADER, "simple.fs"));
     GLuint vao = makeVao(program.position);
 
     EventsT<Vec2> screenSpaceMouseMove = Transform(mouseMove, [](Vec2 pos) {
