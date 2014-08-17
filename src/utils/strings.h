@@ -4,7 +4,7 @@
 
 namespace thm {
 
-namespace detail {
+namespace util_strings_detail {
 
 // Disambiguates output string of makeStrImpl() from std::string arguments.
 struct StringWrapper
@@ -46,7 +46,7 @@ makeStrImpl(StringWrapper& sw, const First& value, const Rest&... rest)
     makeStrImpl(sw, rest...);
 }
 
-} // namespace detail
+} // namespace util_strings_detail
 
 // Builds a std::string from all of the passed arguments. For arguments which
 // are not of char* or std::string type, the free function to_string() is
