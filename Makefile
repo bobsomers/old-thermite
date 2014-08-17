@@ -1,3 +1,4 @@
+CXX = clang++
 CXXFLAGS = -I/home/bsomers/cpp.react/include
 LFLAGS = -L/home/bsomers/cpp.react/build/lib -lCppReact -ltbb -lGLEW -lglfw -lGL
 #CXXFLAGS = -I/usr/local/Cellar/glew/1.10.0/include/GL \
@@ -7,7 +8,7 @@ LFLAGS = -L/home/bsomers/cpp.react/build/lib -lCppReact -ltbb -lGLEW -lglfw -lGL
 #		 -framework OpenGL
 
 all:
-	clang++ -std=c++11 -Wall $(CXXFLAGS) -o thermite thermite.cc $(LFLAGS)
+	$(CXX) -std=c++11 -Wall $(CXXFLAGS) -o thermite thermite.cc $(LFLAGS)
 
 clean:
 	@rm -f thermite
