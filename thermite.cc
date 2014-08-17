@@ -1,3 +1,6 @@
+#include "react/Domain.h"
+#include "react/Event.h"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -9,11 +12,26 @@
 
 namespace {
 
+using namespace react;
+
+struct Vec2
+{
+    Vec2(float x, float y) : x(x), y(y) {}
+    float x;
+    float y;
+};
+
 struct Program
 {
     GLuint id;
     GLint position;
+    GLint location;
 };
+
+REACTIVE_DOMAIN(D, sequential)
+USING_REACTIVE_DOMAIN(D)
+
+EventSourceT<Vec2> mouseMove = MakeEventSource<D, Vec2>();
 
 void
 errorHandler(int error, const char* description)
@@ -27,6 +45,12 @@ keyHandler(GLFWwindow* window, int key, int scancode, int action, int mods)
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
+}
+
+void
+cursorHandler(GLFWwindow*, double x, double y)
+{
+    mouseMove << Vec2(x, y);
 }
 
 GLuint
@@ -100,6 +124,7 @@ makeProgram(GLuint vertShader, GLuint fragShader)
     Program program;
     program.id = p;
     program.position = glGetAttribLocation(p, "position");
+    program.location = glGetUniformLocation(p, "location");
     return program;
 }
 
@@ -152,6 +177,7 @@ main(int argc, char* argv[])
 
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, keyHandler);
+    glfwSetCursorPosCallback(window, cursorHandler);
 
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
@@ -165,6 +191,18 @@ main(int argc, char* argv[])
                                   makeShader(GL_FRAGMENT_SHADER, "simple.frag"));
     GLuint vao = makeVao(program.position);
 
+    EventsT<Vec2> screenSpaceMouseMove = Transform(mouseMove, [](Vec2 pos) {
+        const float width = 640;
+        const float height = 480;
+        const float invAspect = height / width;
+        return Vec2((pos.x / width * 2.0f) - 1.0f, ((pos.y / height * -1.0f * 2.0f) + 1.0f) * invAspect);
+    });
+
+    Vec2 mousePos(0.0f, 0.0f);
+    Observe(screenSpaceMouseMove, [&mousePos](Vec2 pos) {
+        mousePos = pos;
+    });
+
     while (!glfwWindowShouldClose(window)) {
         int width = 0;
         int height = 0;
@@ -176,6 +214,7 @@ main(int argc, char* argv[])
 
         glUseProgram(program.id);
         glBindVertexArray(vao);
+        glUniform2f(program.location, mousePos.x, mousePos.y);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
