@@ -33,7 +33,7 @@ UnknownShaderError::what() const noexcept
 {
     if (mWhat) return mWhat;
 
-    mWhatStr = std::string("File not found: ").append(mShaderPath);
+    mWhatStr = std::string("Unknown shader type: ").append(mShaderPath);
     mWhat = mWhatStr.c_str();
     return mWhat;
 }
