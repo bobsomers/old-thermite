@@ -1,3 +1,3 @@
-local_src := $(call glob-once,$(this-dir),*.cpp)
+local_src := $(call glob,*.cpp)
 
-sources += $(local_src)
+$(eval $(call make-program,coolbeans,$(local_src)))

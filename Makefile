@@ -1,24 +1,21 @@
-top_level_dir := $(dir $(lastword $(MAKEFILE_LIST)))
+top_level_dir := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 include defs.mk
 
 ##############################################################################
-#	SETUP
+#	SETTINGS
 
 # External settings.
 INSTALL_DIR ?= install
 
 # Internal settings.
-build_dir     := build
-source_dir    := src
+build_dir  := build
+source_dir := src
 
 # Default target is "all".
 all:
 
 ##############################################################################
 #	MODULES
-
-# Initialize collection variables.
-sources :=
 
 # Include module definitions.
 include src/driver/module.mk
@@ -45,15 +42,16 @@ $(build_dir)/%.o: $(source_dir)/%.cpp
 ##############################################################################
 #	TOP LEVEL TARGETS
 
-create_build_dirs := $(call make-skeleton-dirs,$(dependencies))
+create_build_dirs := $(call make-dirs,$(dependencies))
 
 .PHONY: all
-all: build/driver/hello.o
-	@echo "Hello, $@!"
+all: $(binaries)
 
 .PHONY: install
-install:
-	@echo "Hello, $@!"
+install: all
+
+.PHONY: test
+test: all
 
 .PHONY: clean
 clean:
