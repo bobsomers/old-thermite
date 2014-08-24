@@ -1,5 +1,3 @@
-#include "src/utils.h"
-
 #include "react/Domain.h"
 #include "react/Event.h"
 
