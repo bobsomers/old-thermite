@@ -1,4 +1,3 @@
-local_dir := src/driver
-local_src := $(wildcard $(local_dir)/*.cpp)
+local_src := $(call glob-once,$(this-dir),*.cpp)
 
 sources += $(local_src)

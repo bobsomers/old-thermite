@@ -1,3 +1,4 @@
+top_level_dir := $(dir $(lastword $(MAKEFILE_LIST)))
 include defs.mk
 
 ##############################################################################
@@ -7,8 +8,8 @@ include defs.mk
 INSTALL_DIR ?= install
 
 # Internal settings.
-source_dir  := src
-build_dir   := build
+build_dir     := build
+source_dir    := src
 
 # Default target is "all".
 all:
@@ -42,17 +43,9 @@ $(build_dir)/%.o: $(source_dir)/%.cpp
 	$(call make-object,$<,$@)
 
 ##############################################################################
-#	CREATE BUILD DIRECTORIES
-
-create-build-dirs := $(shell                     \
-  for f in $(call unique-dirs, $(dependencies)); \
-  do                                             \
-    $(TEST) -d $$f || $(MKDIR) $$f;              \
-  done                                           \
-)
-
-##############################################################################
 #	TOP LEVEL TARGETS
+
+create_build_dirs := $(call make-skeleton-dirs,$(dependencies))
 
 .PHONY: all
 all: build/driver/hello.o
