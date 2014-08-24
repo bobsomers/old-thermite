@@ -22,9 +22,11 @@ to-depend = $(call to-build-dir,$(subst .cpp,.d,$1))
 to-object = $(call to-build-dir,$(subst .cpp,.o,$1))
 
 # Transform binary names (given in the context of their module) into a fully
-# qualified name, without the $(source_dir) or $(build_dir) prefix.
-#to-binary = $(patsubst $(source_dir)/%,%,$(this-dir)/$1)
+# qualified name. Intended to be called from a module.mk.
 to-binary = $(call to-build-dir,$(this-dir)/$1)
+
+# Transform names into static library names.
+to-static = lib$1.a
 
 # Returns a set of unique directories from a given list of files.
 unique-dirs = $(sort $(dir $1))
@@ -74,15 +76,39 @@ define make-object
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) $ -c -o $2 $1
 endef
 
+# Deduplication of macro code for creating binaries. This shouldn't be invoked
+# directly, but rather through make-program, make-static, etc.
+# 	$1 = binary short name
+# 	$2 = binary build directory path
+# 	$3 = source files
+# 	$4 = object files
+# 	$5 = macro which produces the command to run
+define make-binary
+  binaries += $2
+  sources  += $3
+
+  $2: $4
+	$(call $5)
+
+  $1: $2
+endef
+
+# Command to run for making a static library. This should not be invoked
+# directly, but rather through make-static.
+static-cmd = $(AR) $(ARFLAGS) $$@ $$^
+
+# Command to run for making a program. This should not be invoked directly,
+# but rather through make-program.
+program-cmd = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) -o $$@
+
+# Generates rules (which need to be eval'd) for making a static library. For
+# convenience, a top level rule with the name lib$1.a is created as well.
+define make-static
+  $(eval $(call make-binary,$(call to-static,$1),$(call to-binary,$(call to-static,$1)),$2,$(call to-object,$2),static-cmd))
+endef
+
 # Generates rules (which need to be eval'd) for making a program. For
-# convenience, a top level rule with the same name as the binary is created
-# as well.
+# convenience, a top level rule with the same name as $1 is created as well.
 define make-program
-  binaries += $(call to-binary,$1)
-  sources  += $2
-
-  $(call to-binary,$1): $(call to-object,$2)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) -o $$@
-
-  $1: $(call to-binary,$1)
+  $(eval $(call make-binary,$1,$(call to-binary,$1),$2,$(call to-object,$2),program-cmd))
 endef
