@@ -4,6 +4,7 @@ include defs.mk
 #	SETTINGS
 
 # External settings.
+CXXFLAGS ?= -std=c++11
 INSTALL_DIR ?= install
 
 # Internal settings.

@@ -1,4 +1,4 @@
-#include "thermite/errors/UnknownShaderError.h"
+#include "thermite/UnknownShaderError.h"
 
 #include <exception>
 #include <string>

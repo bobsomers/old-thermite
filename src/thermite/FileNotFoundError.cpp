@@ -1,4 +1,4 @@
-#include "thermite/errors/FileNotFoundError.h"
+#include "thermite/FileNotFoundError.h"
 
 #include <exception>
 #include <string>
