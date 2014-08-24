@@ -21,18 +21,13 @@ $(eval $(load-modules))
 ##############################################################################
 #	DEPENDENCIES
 
-# Generate our dependencies from the sources.
-dependencies = $(call to-depend,$(sources))
-
-# Only run dependency generation if our target isn't "clean".
-ifneq "$(MAKECMDGOALS)" "clean"
-  -include $(dependencies)
-endif
+# Generate dependency information from the sources and flesh out the build_dir.
+depends = $(call to-depend,$(sources))
+-include $(depends)
+create_build_dirs := $(call make-dirs,$(depends))
 
 ##############################################################################
 #	TOP LEVEL TARGETS
-
-create_build_dirs := $(call make-dirs,$(dependencies))
 
 .PHONY: all
 all: $(binaries)
