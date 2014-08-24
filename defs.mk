@@ -82,13 +82,14 @@ endef
 # 	$2 = binary build directory path
 # 	$3 = source files
 # 	$4 = object files
-# 	$5 = macro which produces the command to run
+# 	$5 = other dependencies
+# 	$6 = macro which produces the command to run
 define make-binary
   binaries += $2
   sources  += $3
 
-  $2: $4
-	$(call $5)
+  $2: $5 $4
+	$(call $6)
 
   $1: $2
 endef
@@ -103,12 +104,18 @@ program-cmd = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOA
 
 # Generates rules (which need to be eval'd) for making a static library. For
 # convenience, a top level rule with the name lib$1.a is created as well.
+# 	$1 = static lib short name
+# 	$2 = source files
+# 	$3 = other dependencies
 define make-static
-  $(eval $(call make-binary,$(call to-static,$1),$(call to-binary,$(call to-static,$1)),$2,$(call to-object,$2),static-cmd))
+  $(eval $(call make-binary,$(call to-static,$1),$(call to-binary,$(call to-static,$1)),$2,$(call to-object,$2),$3,static-cmd))
 endef
 
 # Generates rules (which need to be eval'd) for making a program. For
 # convenience, a top level rule with the same name as $1 is created as well.
+#	$1 = program short name
+#	$2 = source files
+#	$3 = other dependencies
 define make-program
-  $(eval $(call make-binary,$1,$(call to-binary,$1),$2,$(call to-object,$2),program-cmd))
+  $(eval $(call make-binary,$1,$(call to-binary,$1),$2,$(call to-object,$2),$3,program-cmd))
 endef
