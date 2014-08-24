@@ -1,4 +1,3 @@
-top_level_dir := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 include defs.mk
 
 ##############################################################################
@@ -31,14 +30,6 @@ dependencies = $(call to-depend,$(sources))
 ifneq "$(MAKECMDGOALS)" "clean"
   -include $(dependencies)
 endif
-
-##############################################################################
-#	RULES
-
-# Object files and dependencies.
-#$(build_dir)/%.o: $(source_dir)/%.cpp
-#	$(call make-depend,$<,$(call to-depend,$<),$@)
-#	$(call make-object,$<,$@)
 
 ##############################################################################
 #	TOP LEVEL TARGETS

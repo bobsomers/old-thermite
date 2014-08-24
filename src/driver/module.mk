@@ -1,7 +1,6 @@
 $(eval $(new-module))
 
-module_cppflags := -Isrc/hello
-module_dep      := $(call static-dep,hello)
-module_src      := $(call glob,*.cpp)
+module_src := $(call glob,*.cpp)
+$(eval $(call static-dep,hello))
 
 $(eval $(make-program))

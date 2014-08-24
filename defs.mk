@@ -21,16 +21,16 @@ to-depend = $(call to-build-dir,$(subst .cpp,.d,$1))
 # Transform filenames from source files to object files.
 to-object = $(call to-build-dir,$(subst .cpp,.o,$1))
 
-# Transform binary names (given in the context of their module) into a fully
-# qualified name. Intended to be called from a module.mk.
-#to-binary = $(call to-build-dir,$(this-dir)/$1)
-#	$1 = module
-to-binary = $(build_dir)/$1/$(call $2,$1)
-
 # Transform names into static library names.
 to-static = lib$1.a
 
+# Transform names into program names.
 to-program = $1
+
+# Transform module names into binary names with the given macro.
+#	$1 = module name
+#	$2 = binary name macro
+to-binary = $(build_dir)/$1/$(call $2,$1)
 
 # Returns a set of unique directories from a given list of files.
 unique-dirs = $(sort $(dir $1))
@@ -65,25 +65,60 @@ make-dirs = $(shell                    \
   done                                 \
 )
 
-# TODO: clears all module variables
+# Prepares a new module by deducing its name and clearing all its variables.
 define new-module
   module_name     := $(patsubst $(source_dir)/%,%,$(this-dir))
-  module_cppflags :=
   module_dep      :=
   module_src      :=
+
+  module_cppflags :=
+  module_cxxflags :=
+  module_ldflags  :=
+  module_ldlibs   :=
 endef
 
-static-dep = $(call to-binary,$1,to-static)
+# Bakes all the module variables out with "module" replaced by the module name.
+define bake-vars
+  $(module_name)_cppflags := $(module_cppflags)
+  $(module_name)_cxxflags := $(module_cxxflags)
+  $(module_name)_ldflags  := $(module_ldflags)
+  $(module_name)_ldlibs   := $(module_ldlibs)
+endef
 
-program-dep = $(call to-binary,$1,to-program)
+# Merges in all the flags (that make sense) from the depended-on module.
+#	$1 = module name
+#	$2 = binary full path macro
+define make-deps
+  module_dep += $(call to-binary,$1,$2)
 
-# Command to run for making a static library. This should not be invoked
-# directly, but rather through make-static.
-static-cmd = $(AR) $(ARFLAGS) $$@ $$^
+  module_cppflags += -I$(source_dir)/$1 $$$$($1_cppflags)
+  module_ldflags  += $$$$($1_ldflags)
+  module_ldlibs   += $$$$($1_ldlibs)
+endef
 
-# Command to run for making a program. This should not be invoked directly,
-# but rather through make-program.
-program-cmd = $(CXX) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) -o $$@
+# Adds a dependency on a static library module.
+# 	$1 = module name
+define static-dep
+  $(eval $(call make-deps,$1,to-static))
+endef
+
+# Adds a dependency on a program module.
+# 	$1 = module name
+define program-dep
+  $(eval, $(call make-deps,$1,to-program))
+endef
+
+# Command to run for making a static library.
+# 	$1 = $(module_ldflags)
+# 	$2 = $(module_ldlibs)
+# 	$3 = $(module_arflags)
+static-cmd = $(AR) $(ARFLAGS) $3 $$@ $$^
+
+# Command to run for making a program.
+# 	$1 = $(module_ldflags)
+# 	$2 = $(module_ldlibs)
+# 	$3 = $(module_arflags)
+program-cmd = $(CXX) $(LDFLAGS) $1 $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) $2 -o $$@
 
 # Deduplication of macro code for creating modules. This adds their binary and
 # sources to the global list, sets up a rule to build it by its explicit path
@@ -94,20 +129,22 @@ program-cmd = $(CXX) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) -o $$@
 # This shouldn't be invoked directly, but rather through make-program,
 # make-static, etc.
 #
-# 	$1 = transform lambda from module name to binary full path
+# 	$1 = macro that converts a module name to binary full path
 # 	$2 = macro which produces the binary command to run
 define make-module
   binaries += $(call to-binary,$(module_name),$1)
   sources  += $(module_src)
 
   $(call to-binary,$(module_name),$1): $(call to-object,$(module_src)) $(module_dep)
-	$(call $2)
+	$(call $2,$(module_ldflags),$(module_ldlibs),$(module_arflags))
 
   $(call $1,$(module_name)): $(call to-binary,$(module_name),$1)
 
   $(build_dir)/$(module_name)/%.o: $(source_dir)/$(module_name)/%.cpp
-	$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
+	$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
+	$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
+
+  $(eval $(bake-vars))
 endef
 
 # Generates rules (which need to be eval'd) for making a static library. For
