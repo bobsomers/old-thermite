@@ -23,10 +23,14 @@ to-object = $(call to-build-dir,$(subst .cpp,.o,$1))
 
 # Transform binary names (given in the context of their module) into a fully
 # qualified name. Intended to be called from a module.mk.
-to-binary = $(call to-build-dir,$(this-dir)/$1)
+#to-binary = $(call to-build-dir,$(this-dir)/$1)
+#	$1 = module
+to-binary = $(build_dir)/$1/$(call $2,$1)
 
 # Transform names into static library names.
 to-static = lib$1.a
+
+to-program = $1
 
 # Returns a set of unique directories from a given list of files.
 unique-dirs = $(sort $(dir $1))
@@ -64,7 +68,6 @@ make-dirs = $(shell                    \
 # TODO: clears all module variables
 define new-module
   module_name     := $(patsubst $(source_dir)/%,%,$(this-dir))
-  module_bin      :=
   module_cppflags :=
   module_dep      :=
   module_src      :=
@@ -79,7 +82,7 @@ define make-module
   binaries += $2
   sources  += $(module_src)
 
-  $2: $(module_dep) $(call to-object,$(module_src))
+  $2: $(call to-object,$(module_src)) $(module_dep)
 	$(call $3)
 
   $1: $2
@@ -95,22 +98,24 @@ static-cmd = $(AR) $(ARFLAGS) $$@ $$^
 
 # Command to run for making a program. This should not be invoked directly,
 # but rather through make-program.
-program-cmd = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $$(module_cppflags) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) -o $$@
+program-cmd = $(CXX) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) -o $$@
+
+static-dep = $(call to-binary,$1,to-static)
 
 # Generates rules (which need to be eval'd) for making a static library. For
-# convenience, a top level rule with the name lib$(module_bin).a is created as
+# convenience, a top level rule with the name lib$(module_name).a is created as
 # well.
 define make-static
-  $(eval $(call make-module,$(call to-static,$(module_bin))\
-	                       ,$(call to-binary,$(call to-static,$(module_bin)))\
+  $(eval $(call make-module,$(call to-static,$(module_name))\
+	                       ,$(call to-binary,$(module_name),to-static)\
                            ,static-cmd))
 endef
 
 # Generates rules (which need to be eval'd) for making a program. For
-# convenience, a top level rule with the same name as $(module_bin) is created
+# convenience, a top level rule with the same name as $(module_name) is created
 # as well.
 define make-program
-  $(eval $(call make-module,$(module_bin)\
-	                       ,$(call to-binary,$(module_bin))\
+  $(eval $(call make-module,$(module_name)\
+	                       ,$(call to-binary,$(module_name),to-program)\
                            ,program-cmd))
 endef
