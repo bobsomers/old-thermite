@@ -73,24 +73,9 @@ define new-module
   module_src      :=
 endef
 
-# Deduplication of macro code for creating modules. This shouldn't be invoked
-# directly, but rather through make-program, make-static, etc.
-# 	$1 = binary short name
-# 	$2 = binary full path
-# 	$3 = macro which produces the binary command to run
-define make-module
-  binaries += $2
-  sources  += $(module_src)
+static-dep = $(call to-binary,$1,to-static)
 
-  $2: $(call to-object,$(module_src)) $(module_dep)
-	$(call $3)
-
-  $1: $2
-
-  $(build_dir)/$(module_name)/%.o: $(source_dir)/$(module_name)/%.cpp
-	$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
-endef
+program-dep = $(call to-binary,$1,to-program)
 
 # Command to run for making a static library. This should not be invoked
 # directly, but rather through make-static.
@@ -100,22 +85,41 @@ static-cmd = $(AR) $(ARFLAGS) $$@ $$^
 # but rather through make-program.
 program-cmd = $(CXX) $(LDFLAGS) $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) -o $$@
 
-static-dep = $(call to-binary,$1,to-static)
+# Deduplication of macro code for creating modules. This adds their binary and
+# sources to the global list, sets up a rule to build it by its explicit path
+# in the build directory, sets up a convenience rule to build it by its
+# binary's basename, and stamps out rules for building code from this module
+# with its module-specific flags.
+#
+# This shouldn't be invoked directly, but rather through make-program,
+# make-static, etc.
+#
+# 	$1 = transform lambda from module name to binary full path
+# 	$2 = macro which produces the binary command to run
+define make-module
+  binaries += $(call to-binary,$(module_name),$1)
+  sources  += $(module_src)
+
+  $(call to-binary,$(module_name),$1): $(call to-object,$(module_src)) $(module_dep)
+	$(call $2)
+
+  $(call $1,$(module_name)): $(call to-binary,$(module_name),$1)
+
+  $(build_dir)/$(module_name)/%.o: $(source_dir)/$(module_name)/%.cpp
+	$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
+endef
 
 # Generates rules (which need to be eval'd) for making a static library. For
 # convenience, a top level rule with the name lib$(module_name).a is created as
 # well.
 define make-static
-  $(eval $(call make-module,$(call to-static,$(module_name))\
-	                       ,$(call to-binary,$(module_name),to-static)\
-                           ,static-cmd))
+  $(eval $(call make-module,to-static,static-cmd))
 endef
 
 # Generates rules (which need to be eval'd) for making a program. For
 # convenience, a top level rule with the same name as $(module_name) is created
 # as well.
 define make-program
-  $(eval $(call make-module,$(module_name)\
-	                       ,$(call to-binary,$(module_name),to-program)\
-                           ,program-cmd))
+  $(eval $(call make-module,to-program,program-cmd))
 endef
