@@ -1,4 +1,8 @@
-local_src := $(call glob,*.cpp)
-local_dep := $(call to-static,hello)
+$(eval $(new-module))
 
-$(eval $(call make-program,driver,$(local_src),$(local_dep)))
+module_bin      := driver
+module_cppflags := -Isrc/hello
+module_dep      := $(call to-static,hello)
+module_src      := $(call glob,*.cpp)
+
+$(eval $(make-program))

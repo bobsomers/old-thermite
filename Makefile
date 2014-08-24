@@ -18,7 +18,7 @@ all:
 #	MODULES
 
 # Include module definitions.
-include src/driver/module.mk
+#include src/driver/module.mk
 include src/hello/module.mk
 
 ##############################################################################
@@ -36,9 +36,9 @@ endif
 #	RULES
 
 # Object files and dependencies.
-$(build_dir)/%.o: $(source_dir)/%.cpp
-	$(call make-depend,$<,$(call to-depend,$<),$@)
-	$(call make-object,$<,$@)
+#$(build_dir)/%.o: $(source_dir)/%.cpp
+#	$(call make-depend,$<,$(call to-depend,$<),$@)
+#	$(call make-object,$<,$@)
 
 ##############################################################################
 #	TOP LEVEL TARGETS
