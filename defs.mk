@@ -65,6 +65,11 @@ make-dirs = $(shell                    \
   done                                 \
 )
 
+# Includes all modules found in $(source_dir), marked by a module.mk file.
+define load-modules
+  include $(call rglob-dir,$(source_dir),module.mk)
+endef
+
 # Prepares a new module by deducing its name and clearing all its variables.
 define new-module
   module_name     := $(patsubst $(source_dir)/%,%,$(this-dir))

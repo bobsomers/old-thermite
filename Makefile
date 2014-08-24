@@ -16,9 +16,7 @@ all:
 ##############################################################################
 #	MODULES
 
-# Include module definitions.
-include src/driver/module.mk
-include src/hello/module.mk
+$(eval $(load-modules))
 
 ##############################################################################
 #	DEPENDENCIES
