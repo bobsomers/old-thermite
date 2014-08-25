@@ -34,7 +34,6 @@ noclr  := \033[0m
 purple := \033[1;35m
 yellow := \033[1;33m
 
-
 # Transform files from source directory paths into build directory paths.
 to-build-dir = $(patsubst $(source_dir)/%,$(build_dir)/%,$1)
 
@@ -204,8 +203,6 @@ define make-module
 
   $(eval $(bake-vars))
 endef
-
-# TODO: need rule in make module for .o files from .cpp files in the build dir
 
 # Generates rules (which need to be eval'd) for making a static library. For
 # convenience, a top level rule with the name lib$(module_name).a is created as
