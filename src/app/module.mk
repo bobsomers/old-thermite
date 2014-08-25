@@ -9,10 +9,9 @@ else ifeq "$(platform)" "Linux"
 else
   $(error Platform not supported)
 endif
-
-module_cppflags := -I$(CPPREACT_PATH)/include
-module_ldflags  := -L$(CPPREACT_PATH)/build/lib
-module_ldlibs   := -lCppReact -ltbb -lGLEW $(glfw_lib)
+module_cppflags += -I$(CPPREACT_PATH)/include
+module_ldflags  += -L$(CPPREACT_PATH)/build/lib
+module_ldlibs   += -lCppReact -ltbb -lGLEW $(glfw_lib)
 
 module_src := $(call glob,*.cpp)
 

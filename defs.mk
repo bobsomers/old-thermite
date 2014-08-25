@@ -1,9 +1,18 @@
+# Name of the platform we're running on.
+platform := $(shell uname -s)
+
 # System commands.
+ifeq "$(platform)" "Darwin"
+  ECHO  := echo
+else ifeq "$(platform)" "Linux"
+  ECHO  := echo -e
+else
+  $(error Platform not supported)
+endif
 FIND    := find
 MKDIR   := mkdir
 RM      := rm
 TEST    := test
-UNAME   := uname
 TESTGEN ?= cxxtestgen --error-printer
 
 # Initialize collection variables.
@@ -25,8 +34,6 @@ noclr  := \033[0m
 purple := \033[1;35m
 yellow := \033[1;33m
 
-# Name of the platform we're running on.
-platform := $(shell $(UNAME) -s)
 
 # Transform files from source directory paths into build directory paths.
 to-build-dir = $(patsubst $(source_dir)/%,$(build_dir)/%,$1)
@@ -164,7 +171,7 @@ define make-module
 
   $(call to-binary,$(module_name),$1): $(call to-object,$(module_src)) $(module_dep)
   ifeq "$(VERBOSE)" ""
-	@echo "$(yellow)[link]$(noclr) $$(patsubst $(build_dir)/$(module_name)/%,%,$$@)"
+	@$(ECHO) "$(yellow)[link]$(noclr) $$(patsubst $(build_dir)/$(module_name)/%,%,$$@)"
   endif
 	$(quiet)$(call $2,$(module_ldflags),$(module_ldlibs),$(module_arflags))
 
@@ -173,22 +180,22 @@ define make-module
  ifneq "$(module_test)" ""
   $(module_src): $(module_test)
   ifeq "$(VERBOSE)" ""
-	@echo "$(purple)[testgen]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+	@$(ECHO) "$(purple)[testgen]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
   endif
 	$(quiet)$(TESTGEN) -o $$@ $$<
 
   $(build_dir)/$(module_name)/%.o: $(build_dir)/$(module_name)/%.cpp
   ifeq "$(VERBOSE)" ""
-	@echo "$(green)[dep]$(noclr) $$(patsubst $(build_dir)/%,%,$$<)"
-	@echo "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+	@$(ECHO) "$(green)[dep]$(noclr) $$(patsubst $(build_dir)/%,%,$$<)"
+	@$(ECHO) "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
   endif
 	$(quiet)$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
 	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
  else
   $(build_dir)/$(module_name)/%.o: $(source_dir)/$(module_name)/%.cpp
   ifeq "$(VERBOSE)" ""
-	@echo "$(green)[dep]$(noclr) $$(patsubst $(source_dir)/%,%,$$<)"
-	@echo "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+	@$(ECHO) "$(green)[dep]$(noclr) $$(patsubst $(source_dir)/%,%,$$<)"
+	@$(ECHO) "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
   endif
 	$(quiet)$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
 	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
