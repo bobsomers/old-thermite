@@ -9,6 +9,19 @@ UNAME := uname
 binaries :=
 sources  :=
 
+# VERBOSE controls printing of the underlying commands.
+ifeq "$(VERBOSE)" ""
+  quiet := @
+else
+  quiet :=
+endif
+
+# Colors are all the rave these days.
+yellow := \e[1;33m
+green  := \e[1;32m
+blue   := \e[1;34m
+noclr  := \e[0m
+
 # Name of the platform we're running on.
 platform := $(shell $(UNAME) -s)
 
@@ -141,13 +154,20 @@ define make-module
   sources  += $(module_src)
 
   $(call to-binary,$(module_name),$1): $(call to-object,$(module_src)) $(module_dep)
-	$(call $2,$(module_ldflags),$(module_ldlibs),$(module_arflags))
+  ifeq "$(VERBOSE)" ""
+	@echo -e "$(yellow)[link]$(noclr) $$(patsubst $(build_dir)/$(module_name)/%,%,$$@)"
+  endif
+	$(quiet)$(call $2,$(module_ldflags),$(module_ldlibs),$(module_arflags))
 
   $(call $1,$(module_name)): $(call to-binary,$(module_name),$1)
 
   $(build_dir)/$(module_name)/%.o: $(source_dir)/$(module_name)/%.cpp
-	$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
-	$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
+  ifeq "$(VERBOSE)" ""
+	@echo -e "$(green)[dep]$(noclr) $$(patsubst $(source_dir)/%,%,$$<)"
+	@echo -e "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+  endif
+	$(quiet)$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
+	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
 
   $(eval $(bake-vars))
 endef

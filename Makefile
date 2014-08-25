@@ -4,6 +4,7 @@ include defs.mk
 #	SETTINGS
 
 # External settings.
+ARFLAGS := rcs
 CXXFLAGS ?= -std=c++11 -Wall
 INSTALL_DIR ?= install
 
