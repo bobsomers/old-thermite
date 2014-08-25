@@ -19,11 +19,11 @@ else
 endif
 
 # Colors are all the rave these days.
-blue   := \e[1;34m
-green  := \e[1;32m
-noclr  := \e[0m
-purple := \e[1;35m
-yellow := \e[1;33m
+blue   := \033[1;34m
+green  := \033[1;32m
+noclr  := \033[0m
+purple := \033[1;35m
+yellow := \033[1;33m
 
 # Name of the platform we're running on.
 platform := $(shell $(UNAME) -s)
@@ -164,7 +164,7 @@ define make-module
 
   $(call to-binary,$(module_name),$1): $(call to-object,$(module_src)) $(module_dep)
   ifeq "$(VERBOSE)" ""
-	@echo -e "$(yellow)[link]$(noclr) $$(patsubst $(build_dir)/$(module_name)/%,%,$$@)"
+	@echo "$(yellow)[link]$(noclr) $$(patsubst $(build_dir)/$(module_name)/%,%,$$@)"
   endif
 	$(quiet)$(call $2,$(module_ldflags),$(module_ldlibs),$(module_arflags))
 
@@ -173,22 +173,22 @@ define make-module
  ifneq "$(module_test)" ""
   $(module_src): $(module_test)
   ifeq "$(VERBOSE)" ""
-	@echo -e "$(purple)[testgen]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+	@echo "$(purple)[testgen]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
   endif
 	$(quiet)$(TESTGEN) -o $$@ $$<
 
   $(build_dir)/$(module_name)/%.o: $(build_dir)/$(module_name)/%.cpp
   ifeq "$(VERBOSE)" ""
-	@echo -e "$(green)[dep]$(noclr) $$(patsubst $(build_dir)/%,%,$$<)"
-	@echo -e "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+	@echo "$(green)[dep]$(noclr) $$(patsubst $(build_dir)/%,%,$$<)"
+	@echo "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
   endif
 	$(quiet)$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
 	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
  else
   $(build_dir)/$(module_name)/%.o: $(source_dir)/$(module_name)/%.cpp
   ifeq "$(VERBOSE)" ""
-	@echo -e "$(green)[dep]$(noclr) $$(patsubst $(source_dir)/%,%,$$<)"
-	@echo -e "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+	@echo "$(green)[dep]$(noclr) $$(patsubst $(source_dir)/%,%,$$<)"
+	@echo "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
   endif
 	$(quiet)$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
 	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
