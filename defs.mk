@@ -1,13 +1,15 @@
 # System commands.
-FIND  := find
-MKDIR := mkdir
-RM    := rm
-TEST  := test
-UNAME := uname
+FIND    := find
+MKDIR   := mkdir
+RM      := rm
+TEST    := test
+UNAME   := uname
+TESTGEN ?= cxxtestgen --error-printer
 
 # Initialize collection variables.
 binaries :=
 sources  :=
+tests    :=
 
 # VERBOSE controls printing of the underlying commands.
 ifeq "$(VERBOSE)" ""
@@ -17,10 +19,11 @@ else
 endif
 
 # Colors are all the rave these days.
-yellow := \e[1;33m
-green  := \e[1;32m
 blue   := \e[1;34m
+green  := \e[1;32m
 noclr  := \e[0m
+purple := \e[1;35m
+yellow := \e[1;33m
 
 # Name of the platform we're running on.
 platform := $(shell $(UNAME) -s)
@@ -88,6 +91,7 @@ define new-module
   module_name     := $(patsubst $(source_dir)/%,%,$(this-dir))
   module_dep      :=
   module_src      :=
+  module_test     :=
 
   module_cppflags :=
   module_cxxflags :=
@@ -150,8 +154,13 @@ program-cmd = $(CXX) $(LDFLAGS) $1 $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) $2 
 # 	$1 = macro that converts a module name to binary full path
 # 	$2 = macro which produces the binary command to run
 define make-module
+  sources += $(module_src)
+
+  ifneq "$(module_test)" ""
+  tests += $(call to-binary,$(module_name),$1)
+  else
   binaries += $(call to-binary,$(module_name),$1)
-  sources  += $(module_src)
+  endif
 
   $(call to-binary,$(module_name),$1): $(call to-object,$(module_src)) $(module_dep)
   ifeq "$(VERBOSE)" ""
@@ -161,6 +170,21 @@ define make-module
 
   $(call $1,$(module_name)): $(call to-binary,$(module_name),$1)
 
+ ifneq "$(module_test)" ""
+  $(module_src): $(module_test)
+  ifeq "$(VERBOSE)" ""
+	@echo -e "$(purple)[testgen]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+  endif
+	$(quiet)$(TESTGEN) -o $$@ $$<
+
+  $(build_dir)/$(module_name)/%.o: $(build_dir)/$(module_name)/%.cpp
+  ifeq "$(VERBOSE)" ""
+	@echo -e "$(green)[dep]$(noclr) $$(patsubst $(build_dir)/%,%,$$<)"
+	@echo -e "$(blue)[c++]$(noclr) $$(patsubst $(build_dir)/%,%,$$@)"
+  endif
+	$(quiet)$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
+	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
+ else
   $(build_dir)/$(module_name)/%.o: $(source_dir)/$(module_name)/%.cpp
   ifeq "$(VERBOSE)" ""
 	@echo -e "$(green)[dep]$(noclr) $$(patsubst $(source_dir)/%,%,$$<)"
@@ -168,9 +192,13 @@ define make-module
   endif
 	$(quiet)$(CXX) -MM -MP -MF $$(call to-depend,$$<) -MT $$@ $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) $$<
 	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
+ endif
+
 
   $(eval $(bake-vars))
 endef
+
+# TODO: need rule in make module for .o files from .cpp files in the build dir
 
 # Generates rules (which need to be eval'd) for making a static library. For
 # convenience, a top level rule with the name lib$(module_name).a is created as

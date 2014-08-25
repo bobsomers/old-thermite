@@ -38,7 +38,11 @@ all: $(binaries)
 install: all
 
 .PHONY: test
-test: all
+test: all $(tests)
+	@for t in $(tests); \
+	do                  \
+		$$t;            \
+	done
 
 .PHONY: clean
 clean:

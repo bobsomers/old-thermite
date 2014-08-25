@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/files.h"
+#include "files.h"
 
 #include <cxxtest/TestSuite.h>
 
