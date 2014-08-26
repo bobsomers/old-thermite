@@ -17,3 +17,6 @@ module_src := $(call glob,*.cpp)
 
 $(eval $(call static-dep,thermite))
 $(eval $(make-program))
+
+$(eval $(call make-install,shaders/%.vs,$(call glob,shaders/*.vs)))
+$(eval $(call make-install,shaders/%.fs,$(call glob,shaders/*.fs)))

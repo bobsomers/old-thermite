@@ -26,7 +26,14 @@ $(eval $(load-modules))
 # Generate dependency information from the sources and flesh out the build_dir.
 depends = $(call to-depend,$(sources))
 -include $(depends)
+
+##############################################################################
+#	OUTPUT DIRECTORIES
+
 create_build_dirs := $(call make-dirs,$(depends))
+ifeq "$(MAKECMDGOALS)" "install"
+  create_install_dirs := $(call make-dirs,$(installs))
+endif
 
 ##############################################################################
 #	TOP LEVEL TARGETS
@@ -35,7 +42,7 @@ create_build_dirs := $(call make-dirs,$(depends))
 all: $(binaries)
 
 .PHONY: install
-install: all
+install: all $(installs)
 
 .PHONY: test
 test: all $(tests)
@@ -46,4 +53,4 @@ test: all $(tests)
 
 .PHONY: clean
 clean:
-	$(RM) -rf $(build_dir)
+	$(RM) -rf $(build_dir) $(INSTALL_DIR)

@@ -3,13 +3,14 @@ platform := $(shell uname -s)
 
 # System commands.
 ifeq "$(platform)" "Darwin"
-  ECHO  := echo
+  ECHO    := echo
 else ifeq "$(platform)" "Linux"
-  ECHO  := echo -e
+  ECHO    := echo -e
 else
   $(error Platform not supported)
 endif
 FIND    := find
+INSTALL := install
 MKDIR   := mkdir
 RM      := rm
 TEST    := test
@@ -19,6 +20,7 @@ TESTGEN ?= cxxtestgen --error-printer
 binaries :=
 sources  :=
 tests    :=
+installs :=
 
 # VERBOSE controls printing of the underlying commands.
 ifeq "$(VERBOSE)" ""
@@ -32,10 +34,16 @@ blue   := \033[1;34m
 green  := \033[1;32m
 noclr  := \033[0m
 purple := \033[1;35m
+red    := \033[1;31m
 yellow := \033[1;33m
 
 # Transform files from source directory paths into build directory paths.
 to-build-dir = $(patsubst $(source_dir)/%,$(build_dir)/%,$1)
+
+# Transform files from source directory paths into install directory paths.
+#	$1 = module name
+#	$2 = files
+to-install-dir = $(patsubst $(source_dir)/$1/%,$(INSTALL_DIR)/%,$2)
 
 # Transform filenames from source files to dependency files.
 to-depend = $(call to-build-dir,$(subst .cpp,.d,$1))
@@ -200,7 +208,6 @@ define make-module
 	$(quiet)$(CXX) $(CXXFLAGS) $(module_cxxflags) $(CPPFLAGS) $(module_cppflags) $(TARGET_ARCH) -c -o $$@ $$<
  endif
 
-
   $(eval $(bake-vars))
 endef
 
@@ -216,4 +223,17 @@ endef
 # as well.
 define make-program
   $(eval $(call make-module,to-program,program-cmd))
+endef
+
+# Generates rules to install non-binary files into the $(INSTALL_DIR).
+# 	$1 = the pattern rule which matches the files
+# 	$2 = the files themselves
+define make-install
+  installs += $(call to-install-dir,$(module_name),$2)
+
+  $(INSTALL_DIR)/$1: $(source_dir)/$(module_name)/$1
+  ifeq "$(VERBOSE)" ""
+	@$(ECHO) "$(red)[install]$(noclr) $$(patsubst $(INSTALL_DIR)/%,%,$$@)"
+  endif
+	$(quiet)$(INSTALL) -m 0644 $$< $$@
 endef

@@ -187,8 +187,8 @@ main(int argc, char* argv[])
         std::exit(EXIT_FAILURE);
     }
 
-    Program program = makeProgram(makeShader(GL_VERTEX_SHADER, "src/app/simple.vs"),
-                                  makeShader(GL_FRAGMENT_SHADER, "src/app/simple.fs"));
+    Program program = makeProgram(makeShader(GL_VERTEX_SHADER, "shaders/simple.vs"),
+                                  makeShader(GL_FRAGMENT_SHADER, "shaders/simple.fs"));
     GLuint vao = makeVao(program.position);
 
     EventsT<Vec2> screenSpaceMouseMove = Transform(mouseMove, [](Vec2 pos) {
