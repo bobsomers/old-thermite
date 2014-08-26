@@ -165,7 +165,7 @@ program-cmd = $(CXX) $(LDFLAGS) $1 $(TARGET_ARCH) $$^ $(LOADLIBES) $(LDLIBS) $2 
 # This shouldn't be invoked directly, but rather through make-program,
 # make-static, etc.
 #
-# 	$1 = macro that converts a module name to binary full path
+# 	$1 = macro that converts a module name to the binary name
 # 	$2 = macro which produces the binary command to run
 define make-module
   sources += $(module_src)
@@ -223,6 +223,18 @@ endef
 # as well.
 define make-program
   $(eval $(call make-module,to-program,program-cmd))
+
+ ifeq "$(module_test)" ""
+  installs += $(INSTALL_DIR)/$(call to-program,$(module_name))
+
+ ifeq "$(MAKECMDGOALS)" "install"
+  $(INSTALL_DIR)/$(call to-program,$(module_name)): $(call to-binary,$(module_name),to-program)
+  ifeq "$(VERBOSE)" ""
+	@$(ECHO) "$(red)[install]$(noclr) $$(patsubst $(INSTALL_DIR)/%,%,$$@)"
+  endif
+	$(quiet)$(INSTALL) $$< $$@
+ endif
+ endif
 endef
 
 # Generates rules to install non-binary files into the $(INSTALL_DIR).
