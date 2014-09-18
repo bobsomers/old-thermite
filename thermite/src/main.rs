@@ -1,4 +1,5 @@
 extern crate thermite;
+extern crate native;
 
 use thermite::glfw;
 
