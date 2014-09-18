@@ -18,14 +18,14 @@ pub enum Error {
 
 pub struct Context;
 
-pub fn init() -> Option<Context> {
+pub fn init() -> Context {
     unsafe {
         ffi::glfwSetErrorCallback(Some(preinit_error_callback));
         if ffi::glfwInit() == ffi::FALSE {
-            return None
+            fail!("glfwInit() failed");
         }
     }
-    Some(Context)
+    Context
 }
 
 impl Error {
@@ -65,11 +65,16 @@ impl fmt::Show for Error {
     }
 }
 
-impl Context {
-    // TODO: Drop calls glfwTerminate()
+impl Drop for Context {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::glfwTerminate();
+        }
+    }
 }
 
+// This error bootstrapping is nasty!
 extern fn preinit_error_callback(code: c_int, message: *const c_char) {
     let error = Error::new(code, message);
-    fail!("glfwInit() error {}", error);
+    fail!("glfwInit() {}", error);
 }
