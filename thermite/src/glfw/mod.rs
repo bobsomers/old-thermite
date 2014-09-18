@@ -1,66 +1,75 @@
 use libc::{c_char, c_int};
+use std::fmt;
 
 mod ffi;
 mod platform;
 
-// Public API
-
 pub enum Error {
-    NotInitialized,
-    NoCurrentContext,
-    InvalidEnum,
-    InvalidValue,
-    OutOfMemory,
-    ApiUnavailable,
-    VersionUnavailable,
-    PlatformError,
-    FormatUnavailable
+    NotInitialized(String),
+    NoCurrentContext(String),
+    InvalidEnum(String),
+    InvalidValue(String),
+    OutOfMemory(String),
+    ApiUnavailable(String),
+    VersionUnavailable(String),
+    PlatformError(String),
+    FormatUnavailable(String)
 }
 
-pub fn init() -> bool {
+pub struct Context;
+
+pub fn init() -> Option<Context> {
     unsafe {
-        ffi::glfwSetErrorCallback(Some(fail_on_error_callback));
-        ffi::glfwInit() == ffi::TRUE
+        ffi::glfwSetErrorCallback(Some(preinit_error_callback));
+        if ffi::glfwInit() == ffi::FALSE {
+            return None
+        }
     }
+    Some(Context)
 }
-
-// Internals
 
 impl Error {
-    fn from_code(err_code: c_int) -> Error {
-        match err_code {
-            ffi::NOT_INITIALIZED => NotInitialized,
-            ffi::NO_CURRENT_CONTEXT => NoCurrentContext,
-            ffi::INVALID_ENUM => InvalidEnum,
-            ffi::INVALID_VALUE => InvalidValue,
-            ffi::OUT_OF_MEMORY => OutOfMemory,
-            ffi::API_UNAVAILABLE => ApiUnavailable,
-            ffi::VERSION_UNAVAILABLE => VersionUnavailable,
-            ffi::PLATFORM_ERROR => PlatformError,
-            ffi::FORMAT_UNAVAILABLE => FormatUnavailable,
+    fn new(code: c_int, message: *const c_char) -> Error {
+        use std::string::raw;
+        use std::mem;
+        let msg = unsafe { raw::from_buf(mem::transmute(message)) };
+
+        match code {
+            ffi::NOT_INITIALIZED => NotInitialized(msg),
+            ffi::NO_CURRENT_CONTEXT => NoCurrentContext(msg),
+            ffi::INVALID_ENUM => InvalidEnum(msg),
+            ffi::INVALID_VALUE => InvalidValue(msg),
+            ffi::OUT_OF_MEMORY => OutOfMemory(msg),
+            ffi::API_UNAVAILABLE => ApiUnavailable(msg),
+            ffi::VERSION_UNAVAILABLE => VersionUnavailable(msg),
+            ffi::PLATFORM_ERROR => PlatformError(msg),
+            ffi::FORMAT_UNAVAILABLE => FormatUnavailable(msg),
             _ => fail!("Unknown GLFW error code.")
         }
     }
+}
 
-    fn to_string(&self) -> &str {
+impl fmt::Show for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            NotInitialized => "NotInitialized",
-            NoCurrentContext => "NoCurrentContext",
-            InvalidEnum => "InvalidEnum",
-            InvalidValue => "InvalidValue",
-            OutOfMemory => "OutOfMemory",
-            ApiUnavailable => "ApiUnavailable",
-            VersionUnavailable => "VersionUnavailable",
-            PlatformError => "PlatformError",
-            FormatUnavailable => "FormatUnavailable"
+            NotInitialized(ref msg) => write!(f, "NotInitialized: {}", msg),
+            NoCurrentContext(ref msg) => write!(f, "NoCurrentContext: {}", msg),
+            InvalidEnum(ref msg) => write!(f, "InvalidEnum: {}", msg),
+            InvalidValue(ref msg) => write!(f, "InvalidValue: {}", msg),
+            OutOfMemory(ref msg) => write!(f, "OutOfMemory: {}", msg),
+            ApiUnavailable(ref msg) => write!(f, "ApiUnavailable: {}", msg),
+            VersionUnavailable(ref msg) => write!(f, "VersionUnavailable: {}", msg),
+            PlatformError(ref msg) => write!(f, "PlatformError: {}", msg),
+            FormatUnavailable(ref msg) => write!(f, "FormatUnavailable: {}", msg)
         }
     }
 }
 
-extern fn fail_on_error_callback(err_code: c_int, err_msg: *const c_char) {
-    use std::string::raw;
+impl Context {
+    // TODO: Drop calls glfwTerminate()
+}
 
-    let error = Error::from_code(err_code);
-    let message = unsafe { raw::from_buf(err_msg as *const u8) };
-    fail!("GLFW Error: {}, {}", error.to_string(), message);
+extern fn preinit_error_callback(code: c_int, message: *const c_char) {
+    let error = Error::new(code, message);
+    fail!("glfwInit() error {}", error);
 }

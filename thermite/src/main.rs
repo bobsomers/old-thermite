@@ -4,6 +4,6 @@ extern crate native;
 use thermite::glfw;
 
 fn main() {
-    let result = glfw::init();
-    println!("GLFW initialized: {}", result)
+    let glfw = glfw::init().expect("Failed to initialize GLFW");
+    println!("Yay!")
 }

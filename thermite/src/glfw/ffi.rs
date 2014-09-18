@@ -3,8 +3,8 @@
 use libc::{c_char, c_int};
 
 // C boolean values.
-//pub static FALSE: c_int = 0;
-pub static TRUE: c_int = 1;
+pub static FALSE: c_int = 0;
+//pub static TRUE: c_int = 1;
 
 // Error codes.
 pub static NOT_INITIALIZED    : c_int = 0x00010001;
