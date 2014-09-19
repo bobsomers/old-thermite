@@ -1,5 +1,6 @@
 use libc::{c_char, c_int};
 use std::fmt;
+use std::ptr;
 
 mod ffi;
 mod platform;
@@ -17,6 +18,10 @@ pub enum Error {
 }
 
 pub struct Context;
+
+pub struct Window {
+    ptr: ffi::GLFWwindow
+}
 
 pub fn init() -> Context {
     unsafe {
@@ -73,7 +78,19 @@ impl Drop for Context {
     }
 }
 
-// This error bootstrapping is nasty!
+impl Context {
+    // TODO: implement last two parameters, monitor and share
+    pub fn create_window(&self, width: int, height: int, title: &str) -> Window {
+        let c_title = title.to_c_str();
+        unsafe {
+            let c_window = ffi::glfwCreateWindow(
+                    width as c_int, height as c_int, c_title.as_ptr(),
+                    ptr::mut_null(), ptr::mut_null());
+            Window { ptr: c_window }
+        }
+    }
+}
+
 extern fn preinit_error_callback(code: c_int, message: *const c_char) {
     let error = Error::new(code, message);
     fail!("glfwInit() {}", error);

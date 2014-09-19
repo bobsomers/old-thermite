@@ -1,6 +1,6 @@
 #![allow(bad_style)]
 
-use libc::{c_char, c_int};
+use libc::{c_char, c_int, c_void};
 
 // C boolean values.
 pub static FALSE: c_int = 0;
@@ -17,11 +17,16 @@ pub static VERSION_UNAVAILABLE: c_int = 0x00010007;
 pub static PLATFORM_ERROR     : c_int = 0x00010008;
 pub static FORMAT_UNAVAILABLE : c_int = 0x00010009;
 
-type GLFWerrorfun = extern fn(c_int, *const c_char);
+pub type GLFWwindow = *mut c_void;
+
+pub type GLFWerrorfun = extern fn(c_int, *const c_char);
 
 extern {
     pub fn glfwInit() -> c_int;
     pub fn glfwTerminate();
+
+    pub fn glfwCreateWindow(width: c_int, height: c_int, title: *const c_char,
+                            monitor: *mut c_void, share: GLFWwindow) -> GLFWwindow;
 
     pub fn glfwSetErrorCallback(cbfun: Option<GLFWerrorfun>) -> Option<GLFWerrorfun>;
 }
