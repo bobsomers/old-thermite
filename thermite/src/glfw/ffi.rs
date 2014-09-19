@@ -28,5 +28,9 @@ extern {
     pub fn glfwCreateWindow(width: c_int, height: c_int, title: *const c_char,
                             monitor: *mut c_void, share: GLFWwindow) -> GLFWwindow;
 
+    pub fn glfwWindowShouldClose(window: GLFWwindow) -> c_int;
+
+    pub fn glfwPollEvents();
+
     pub fn glfwSetErrorCallback(cbfun: Option<GLFWerrorfun>) -> Option<GLFWerrorfun>;
 }

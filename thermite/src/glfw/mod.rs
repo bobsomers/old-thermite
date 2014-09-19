@@ -80,6 +80,7 @@ impl Drop for Context {
 
 impl Context {
     // TODO: implement last two parameters, monitor and share
+    // TODO: error handling if c_window is null (glfwTerminate)
     pub fn create_window(&self, width: int, height: int, title: &str) -> Window {
         let c_title = title.to_c_str();
         unsafe {
@@ -87,6 +88,22 @@ impl Context {
                     width as c_int, height as c_int, c_title.as_ptr(),
                     ptr::mut_null(), ptr::mut_null());
             Window { ptr: c_window }
+        }
+    }
+
+    pub fn poll_events(&self) {
+        unsafe {
+            ffi::glfwPollEvents();
+        }
+    }
+}
+
+impl Window {
+    pub fn should_close(&self) -> bool {
+        let result = unsafe { ffi::glfwWindowShouldClose(self.ptr) };
+        match result {
+            0 => false,
+            _ => true
         }
     }
 }
