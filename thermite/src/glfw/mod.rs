@@ -17,7 +17,9 @@ pub enum Error {
     FormatUnavailable(String)
 }
 
-pub struct Context;
+pub struct Context {
+    pub on_error: |Error|
+}
 
 pub struct Window {
     ptr: ffi::GLFWwindow
@@ -30,7 +32,7 @@ pub fn init() -> Context {
             fail!("glfwInit() failed");
         }
     }
-    Context
+    Context::new()
 }
 
 impl Error {
@@ -79,6 +81,18 @@ impl Drop for Context {
 }
 
 impl Context {
+    fn new() -> Context {
+        let on_error_default = |e: Error| {
+            fail!("GLFW error: {}", e);
+        };
+
+        // TODO: more default callbacks
+
+        Context {
+            on_error: on_error_default
+        }
+    }
+
     // TODO: implement last two parameters, monitor and share
     // TODO: error handling if c_window is null (glfwTerminate)
     pub fn create_window(&self, width: int, height: int, title: &str) -> Window {
@@ -87,6 +101,9 @@ impl Context {
             let c_window = ffi::glfwCreateWindow(
                     width as c_int, height as c_int, c_title.as_ptr(),
                     ptr::mut_null(), ptr::mut_null());
+            if c_window.is_null() {
+                fail!("glfwCreateWindow returned null!");
+            }
             Window { ptr: c_window }
         }
     }
